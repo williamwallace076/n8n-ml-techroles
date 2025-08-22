@@ -56,11 +56,13 @@ MODEL_URL = os.getenv("MODEL_URL")
 resp = requests.get(MODEL_URL)
 resp.raise_for_status()
 tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pkl")
+print("Modelo temporário criado:", tmp_file.name)
 with open(tmp_file.name, "wb") as f:
     f.write(resp.content)
 
 saved = joblib.load(tmp_file.name)
 model = saved["model"]
+print("modelo:", model)
 le_dict = saved["le_dict"]
 feature_columns = saved["feature_columns"]
 
@@ -92,27 +94,28 @@ def predict(data: InputData):
     # Predição
     pred_encoded = model.predict(df_input)
     cargo_previsto = le_dict["cargo"].inverse_transform(pred_encoded)
+    cargo_previsto_str = str(cargo_previsto[0])
 
     return {
         "input": d,
-        "cargo_previsto": cargo_previsto[0]
+        "cargo_previsto": cargo_previsto_str
     }
 
-# # Teste rápido
-# if __name__ == "__main__":
-#     teste = InputData(
-#         idade=25,
-#         genero="Masculino",
-#         etnia="Branco",
-#         pcd="Não",
-#         vive_no_brasil="Sim",
-#         estado_moradia="Pará (PA)",
-#         nivel_ensino="Pós-graduação",
-#         formacao="Computação / Engenharia de Software / Sistemas de Informação/ TI",
-#         tempo_experiencia_dados="de 3 a 4 anos",
-#         linguagens_preferidas="Python, JavaScript",
-#         bancos_de_dados="PostgreSQL, MongoDB",
-#         cloud_preferida="Amazon Web Services (AWS)"
-#     )
-#     resultado = predict(teste)
-#     print(resultado)
+# Teste rápido
+if __name__ == "__main__":
+    teste = InputData(
+    idade=25,
+    genero="Masculino",
+    etnia="Branco",
+    pcd="Não",
+    vive_no_brasil="Sim",
+    estado_moradia="Pará (PA)",
+    nivel_ensino="Pós-graduação",
+    formacao="Computação / Engenharia de Software / Sistemas de Informação/ TI",
+    tempo_experiencia_dados="de 3 a 4 anos",
+    linguagens_preferidas="Python, JavaScript",
+    bancos_de_dados="PostgreSQL, MongoDB",
+    cloud_preferida="Amazon Web Services (AWS)"
+    )
+    resultado = predict(teste)
+    print(resultado)
