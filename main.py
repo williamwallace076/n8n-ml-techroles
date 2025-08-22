@@ -6,8 +6,11 @@ import requests
 import tempfile
 import pandas as pd
 from pydantic import BaseModel
+from dotenv import load_dotenv
 
-# Definir app FastAPI
+# Carregar variáveis do .env
+load_dotenv()
+
 app = FastAPI(title="Previsão de Cargos")
 
 # Configuração de CORS
@@ -35,12 +38,11 @@ class InputData(BaseModel):
     bancos_de_dados: str
     cloud_preferida: str
 
-# Carregar modelo do GitHub (link RAW no .env)
+# Variáveis do .env
 MODEL_URL = os.getenv("MODEL_URL")
+EXPECTED_COLUMNS = os.getenv("EXPECTED_COLUMNS", "").split(",")
 
 def load_model():
-    if not MODEL_URL:
-        raise ValueError("Variável de ambiente MODEL_URL não definida")
     resp = requests.get(MODEL_URL)
     resp.raise_for_status()
     tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pkl")
@@ -50,20 +52,20 @@ def load_model():
 
 modelo = load_model()
 
-# Rota de saúde
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
-# Rota de previsão
 @app.post("/predict")
 def predict(data: InputData):
-    # Converter input para DataFrame
     df = pd.DataFrame([data.dict()])
 
-    # Aqui você pode ajustar a ordem das colunas se necessário
-    # exemplo: df = df[["idade","experiencia", ...]]
-    # Ou usar variáveis de ambiente EXPECTED_COLUMNS
+    # Reordenar colunas se definido no .env
+    if EXPECTED_COLUMNS and EXPECTED_COLUMNS[0] != "":
+        df = df[EXPECTED_COLUMNS]
 
     pred = modelo.predict(df)
-    return {"cargo_previsto": str(pred[0])}
+    return {
+        "input": data.dict(),
+        "cargo_previsto": str(pred[0])
+    }
