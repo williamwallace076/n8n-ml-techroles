@@ -101,21 +101,21 @@ def predict(data: InputData):
         "cargo_previsto": cargo_previsto_str
     }
 
-# Teste rápido
-if __name__ == "__main__":
-    teste = InputData(
-    idade=25,
-    genero="Masculino",
-    etnia="Branco",
-    pcd="Não",
-    vive_no_brasil="Sim",
-    estado_moradia="Pará (PA)",
-    nivel_ensino="Pós-graduação",
-    formacao="Computação / Engenharia de Software / Sistemas de Informação/ TI",
-    tempo_experiencia_dados="de 3 a 4 anos",
-    linguagens_preferidas="Python, JavaScript",
-    bancos_de_dados="PostgreSQL, MongoDB",
-    cloud_preferida="Amazon Web Services (AWS)"
-    )
-    resultado = predict(teste)
-    print(resultado)
+# # Teste rápido
+# if __name__ == "__main__":
+#     teste = InputData(
+#     idade=25,
+#     genero="Masculino",
+#     etnia="Branco",
+#     pcd="Não",
+#     vive_no_brasil="Sim",
+#     estado_moradia="Pará (PA)",
+#     nivel_ensino="Pós-graduação",
+#     formacao="Computação / Engenharia de Software / Sistemas de Informação/ TI",
+#     tempo_experiencia_dados="de 3 a 4 anos",
+#     linguagens_preferidas="Python, JavaScript",
+#     bancos_de_dados="PostgreSQL, MongoDB",
+#     cloud_preferida="Amazon Web Services (AWS)"
+#     )
+#     resultado = predict(teste)
+#     print(resultado)
