@@ -42,6 +42,9 @@ class InputData(BaseModel):
 MODEL_URL = os.getenv("MODEL_URL")
 EXPECTED_COLUMNS = os.getenv("EXPECTED_COLUMNS", "").split(",")
 
+print("MODEL_URL carregada:", MODEL_URL)
+
+
 def load_model():
     resp = requests.get(MODEL_URL)
     resp.raise_for_status()
