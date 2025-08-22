@@ -21,7 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Modelo esperado
+# Input esperado
 class InputData(BaseModel):
     idade: int
     genero: str
@@ -35,6 +35,21 @@ class InputData(BaseModel):
     linguagens_preferidas: str
     bancos_de_dados: str
     cloud_preferida: str
+
+# Bancos de dados para API
+bancos_sql = {'sqlserver','mysql','postgresql','oracle','googlebigquery',
+              'sqlite','saphana','snowflake','amazonauroraourds','mariadb',
+              'db2','firebird','amazonredshift','microsoftaccess'}
+
+bancos_nosql = {'s3','databricks','amazonathena','mongodb','hive','dynamodb',
+                'presto','elaticsearch','redis','firebase','splunk','nenhum',
+                'cassandra','hbase','googlefirestore','neo4j','excel'}
+
+def map_bancos_user(input_str):
+    x = str(input_str).lower()
+    sql_count = sum(1 for s in bancos_sql if s in x)
+    nosql_count = sum(1 for s in bancos_nosql if s in x)
+    return sql_count, nosql_count
 
 # Carregar modelo
 MODEL_URL = os.getenv("MODEL_URL")
@@ -58,11 +73,15 @@ def predict(data: InputData):
     d = data.model_dump()
 
     # Ignorar 'vive_no_brasil' e 'pcd'
-    for k in ["vive_no_brasil", "pcd"]:
-        if k in d:
-            d.pop(k)
+    for k in ["vive_no_brasil", "pcd", "nosql_count", "sql_count"]:
+        d.pop(k, None)
 
-    # Aplicar LabelEncoder em todas as colunas disponíveis
+    # Mapear bancos de dados
+    sql_count, nosql_count = map_bancos_user(d.pop("bancos_de_dados", ""))
+    d["sql_count"] = sql_count
+    d["nosql_count"] = nosql_count
+
+    # Aplicar LabelEncoder nas colunas restantes
     for col in le_dict:
         if col in d:
             d[col] = le_dict[col].transform([d[col]])[0]
@@ -79,7 +98,7 @@ def predict(data: InputData):
         "cargo_previsto": cargo_previsto[0]
     }
 
-# Exemplo de teste rápido
+# Teste rápido
 if __name__ == "__main__":
     teste = InputData(
         idade=25,
@@ -90,7 +109,7 @@ if __name__ == "__main__":
         estado_moradia="Pará (PA)",
         nivel_ensino="Pós-graduação",
         formacao="Computação / Engenharia de Software / Sistemas de Informação/ TI",
-        tempo_experiencia_dados="5 anos",
+        tempo_experiencia_dados="de 3 a 4 anos",
         linguagens_preferidas="Python, JavaScript",
         bancos_de_dados="PostgreSQL, MongoDB",
         cloud_preferida="AWS"
