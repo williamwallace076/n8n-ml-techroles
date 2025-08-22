@@ -9,7 +9,6 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 
 load_dotenv()
-
 app = FastAPI(title="Previsão de Cargos")
 
 # CORS
@@ -37,20 +36,6 @@ class InputData(BaseModel):
     bancos_de_dados: str
     cloud_preferida: str
 
-# class InputData(BaseModel):
-#     idade: int
-#     genero: str
-#     etnia: str
-#     pcd: str
-#     vive_no_brasil: str
-#     estado_moradia: str
-#     nivel_ensino: str
-#     formacao: str
-#     tempo_experiencia_dados: str
-#     linguagens_preferidas: str
-#     bancos_de_dados: str
-#     cloud_preferida: str
-
 # Carregar modelo
 MODEL_URL = os.getenv("MODEL_URL")
 resp = requests.get(MODEL_URL)
@@ -70,48 +55,45 @@ def health():
 
 @app.post("/predict")
 def predict(data: InputData):
-    d = data.dict()
+    d = data.model_dump()
 
     # Ignorar 'vive_no_brasil' e 'pcd'
-    for k in ['vive_no_brasil', 'pcd']:
+    for k in ["vive_no_brasil", "pcd"]:
         if k in d:
             d.pop(k)
 
-    # Aplicar LabelEncoder para todas as colunas restantes que têm encoder
+    # Aplicar LabelEncoder em todas as colunas disponíveis
     for col in le_dict:
         if col in d:
             d[col] = le_dict[col].transform([d[col]])[0]
 
-    # Criar DataFrame com colunas na ordem correta
+    # Criar DataFrame na ordem correta
     df_input = pd.DataFrame([{k: d.get(k, 0) for k in feature_columns}])
 
     # Predição
     pred_encoded = model.predict(df_input)
-    cargo_previsto = le_dict['cargo'].inverse_transform(pred_encoded)
+    cargo_previsto = le_dict["cargo"].inverse_transform(pred_encoded)
 
     return {
         "input": d,
         "cargo_previsto": cargo_previsto[0]
     }
 
-
-# Cria um objeto de teste com InputData
-teste = InputData(
-    idade=20,
-    genero="Masculino",
-    etnia="Branco",
-    pcd="Não",
-    vive_no_brasil="Sim",
-    estado_moradia="Pará (PA)",
-    nivel_ensino="Pós-graduação",
-    formacao="Computação / Engenharia de Software / Sistemas de Informação/ TI",
-    tempo_experiencia_dados="5 anos",
-    linguagens_preferidas="Python, JavaScript",
-    bancos_de_dados="PostgreSQL, MongoDB",
-    cloud_preferida="AWS"
-)
-
-# Chama a função predict diretamente
-resultado = predict(teste)
-
-print(resultado)
+# Exemplo de teste rápido
+if __name__ == "__main__":
+    teste = InputData(
+        idade=25,
+        genero="Masculino",
+        etnia="Branco",
+        pcd="Não",
+        vive_no_brasil="Sim",
+        estado_moradia="Pará (PA)",
+        nivel_ensino="Pós-graduação",
+        formacao="Computação / Engenharia de Software / Sistemas de Informação/ TI",
+        tempo_experiencia_dados="5 anos",
+        linguagens_preferidas="Python, JavaScript",
+        bancos_de_dados="PostgreSQL, MongoDB",
+        cloud_preferida="AWS"
+    )
+    resultado = predict(teste)
+    print(resultado)
