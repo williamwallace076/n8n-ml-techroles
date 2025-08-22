@@ -8,12 +8,11 @@ import pandas as pd
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
-# Carregar variáveis do .env
 load_dotenv()
 
 app = FastAPI(title="Previsão de Cargos")
 
-# Configuração de CORS
+# CORS
 origins = os.getenv("CORS_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
@@ -23,7 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Classe para os parâmetros recebidos
+# Modelo esperado
 class InputData(BaseModel):
     idade: int
     genero: str
@@ -34,26 +33,19 @@ class InputData(BaseModel):
     nivel_ensino: str
     formacao: str
     tempo_experiencia_dados: str
-    linguagens_Preferidas: str
+    linguagens_preferidas: str
     bancos_de_dados: str
     cloud_preferida: str
 
-# Variáveis do .env
+# Carregar modelo + encoder do cargo
 MODEL_URL = os.getenv("MODEL_URL")
-EXPECTED_COLUMNS = os.getenv("EXPECTED_COLUMNS", "").split(",")
+resp = requests.get(MODEL_URL)
+resp.raise_for_status()
+tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pkl")
+with open(tmp_file.name, "wb") as f:
+    f.write(resp.content)
 
-print("MODEL_URL carregada:", MODEL_URL)
-
-
-def load_model():
-    resp = requests.get(MODEL_URL)
-    resp.raise_for_status()
-    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pkl")
-    with open(tmp_file.name, "wb") as f:
-        f.write(resp.content)
-    return joblib.load(tmp_file.name)
-
-modelo = load_model()
+pipeline, le_cargo = joblib.load(tmp_file.name)
 
 @app.get("/health")
 def health():
@@ -61,14 +53,16 @@ def health():
 
 @app.post("/predict")
 def predict(data: InputData):
+    # Converter para DataFrame
     df = pd.DataFrame([data.dict()])
 
-    # Reordenar colunas se definido no .env
-    if EXPECTED_COLUMNS and EXPECTED_COLUMNS[0] != "":
-        df = df[EXPECTED_COLUMNS]
+    # Rodar pipeline
+    pred_encoded = pipeline.predict(df)
 
-    pred = modelo.predict(df)
+    # Decodificar cargo
+    cargo_previsto = le_cargo.inverse_transform(pred_encoded)
+
     return {
         "input": data.dict(),
-        "cargo_previsto": str(pred[0])
+        "cargo_previsto": cargo_previsto[0]
     }
