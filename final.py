@@ -1,63 +1,59 @@
 import pandas as pd
-from sklearn.preprocessing import OneHotEncoder, LabelEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 import joblib
 
-# Carregar dados
+# 1. Carregamento dos dados
 url = "https://raw.githubusercontent.com/Weverton-Cristian/Processing-Dataset_-Intelligent_Agent/master/dataset.csv"
 df = pd.read_csv(url)
+
+# 2. Limpeza básica
 df = df.drop_duplicates()
 df = df.dropna(subset=["cargo"])
 df = df[df["cargo"].astype(str).str.strip() != ""]
 
-# Substituir valores raros (menos de 35 ocorrências)
+# 3. Codificação one-hot para algumas colunas
+df = pd.get_dummies(df, columns=["estado_moradia", "etnia", "formacao", "linguagens_preferidas"])
+
+# 4. Remover categorias raras (frequência < 35)
 for col in df.columns:
     raros = df[col].value_counts()[df[col].value_counts() < 35].index
     df.loc[df[col].isin(raros), col] = 'Outra Opção'
-    df.drop(df[df[col] == 'Outra Opção'].index, inplace=True)
+    df = df[df[col] != 'Outra Opção']
 
-# Definir colunas
-categoricas = ["estado_moradia", "etnia", "linguagens_preferidas", "vive_no_brasil", 
-               "nivel_ensino", "formacao", "pcd", "cloud_preferida", "genero"]
-numericas = ["idade", "tempo_experiencia_dados"]
+# 5. Tratamento da coluna 'idade'
+df['idade'] = pd.to_numeric(df['idade'], errors='coerce').fillna(df['idade'].median()).astype(int)
 
-# LabelEncoder para variáveis textuais que não vão virar dummies
-le = LabelEncoder()
-df['cargo'] = le.fit_transform(df['cargo'])
+# 6. Label Encoding para todas as colunas categóricas restantes
+le_dict = {}
+for col in ['genero', 'tempo_experiencia_dados', 'bancos_de_dados', 'pcd', 'vive_no_brasil', 'cargo', 'cloud_preferida', 'nivel_ensino']:
+    le = LabelEncoder()
+    df[col] = le.fit_transform(df[col])
+    le_dict[col] = le
 
-# Pré-processamento
-preprocessor = ColumnTransformer(
-    transformers=[
-        ("cat", OneHotEncoder(handle_unknown="ignore"), categoricas),
-        ("num", "passthrough", numericas)
-    ]
-)
-
-# Pipeline completo
-pipeline = Pipeline(steps=[
-    ("preprocessor", preprocessor),
-    ("classifier", RandomForestClassifier(n_estimators=1000, random_state=42, n_jobs=-1))
-])
-
-# Separar features e alvo
-X = df.drop("cargo", axis=1)
+# 7. Separação entre X (features) e y (target)
+X = df.drop(["cargo", "vive_no_brasil", "pcd"], axis=1)
 y = df["cargo"]
 
+# 8. Divisão treino/teste
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.3, random_state=42, stratify=y
 )
 
-# Treinar modelo
-pipeline.fit(X_train, y_train)
+# 9. Treinamento do modelo
+rf_model = RandomForestClassifier(n_estimators=1000, random_state=42, n_jobs=-1)
+rf_model.fit(X_train, y_train)
 
-# Testar modelo
-y_pred = pipeline.predict(X_test)
-print(f"Acurácia: {accuracy_score(y_test, y_pred):.4f}")
+# 10. Avaliação
+y_pred = rf_model.predict(X_test)
+print(f"\n✅ Acurácia: {accuracy_score(y_test, y_pred):.4f}")
 print(classification_report(y_test, y_pred))
 
-# Salvar pipeline completo
-joblib.dump((pipeline, le), "modelo_cargos_pipeline.pkl")
+# 11. Salvar modelo e LabelEncoders
+joblib.dump({
+    "model": rf_model,
+    "le_dict": le_dict,
+    "feature_columns": X.columns.tolist()
+}, "modelo_cargos.pkl")
