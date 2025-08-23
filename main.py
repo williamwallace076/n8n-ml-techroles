@@ -34,7 +34,7 @@ class InputData(BaseModel):
     nivel_ensino: str
     formacao: str
     tempo_experiencia_dados: str
-    linguagens_preferidas: str
+    linguagens_Preferidas: str
     bancos_de_dados: str
     cloud_preferida: str
 
