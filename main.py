@@ -7,6 +7,8 @@ import tempfile
 import pandas as pd
 from pydantic import BaseModel
 from dotenv import load_dotenv
+import uvicorn
+
 
 load_dotenv()
 app = FastAPI(title="Previsão de Cargos")
@@ -100,6 +102,10 @@ def predict(data: InputData):
         "input": d,
         "cargo_previsto": cargo_previsto_str
     }
+
+
+if __name__ == "__main__":
+    uvicorn.run("app:main", host="0.0.0.0", port=8000, reload=False)
 
 # # Teste rápido
 # if __name__ == "__main__":
