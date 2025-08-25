@@ -23,21 +23,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Input esperado
-class InputData(BaseModel):
-    idade: int
-    genero: str
-    etnia: str
-    pcd: str
-    vive_no_brasil: str
-    estado_moradia: str
-    nivel_ensino: str
-    formacao: str
-    tempo_experiencia_dados: str
-    linguagens_Preferidas: str
-    bancos_de_dados: str
-    cloud_preferida: str
-
 # Bancos de dados para API
 bancos_sql = {'sqlserver','mysql','postgresql','oracle','googlebigquery',
               'sqlite','saphana','snowflake','amazonauroraourds','mariadb',
@@ -72,6 +57,21 @@ feature_columns = saved["feature_columns"]
 def health():
     return {"status": "ok"}
 
+# Input esperado
+class InputData(BaseModel):
+    idade: int
+    genero: str
+    etnia: str
+    pcd: str
+    vive_no_brasil: str
+    estado_moradia: str
+    nivel_ensino: str
+    formacao: str
+    tempo_experiencia_dados: str
+    linguagens_Preferidas: str
+    bancos_de_dados: str
+    cloud_preferida: str
+
 @app.post("/predict")
 def predict(data: InputData):
     d = data.model_dump()
@@ -88,7 +88,7 @@ def predict(data: InputData):
     # Aplicar LabelEncoder nas colunas restantes
     for col in le_dict:
         if col in d:
-            d[col] = le_dict[col].transform([d[col]])[0]
+            d[col] = int(le_dict[col].transform([d[col]])[0])
 
     # Criar DataFrame na ordem correta
     df_input = pd.DataFrame([{k: d.get(k, 0) for k in feature_columns}])
@@ -122,4 +122,5 @@ if __name__ == "__main__":
     # resultado = predict(teste)
     # print(resultado)
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=False)
+
 
