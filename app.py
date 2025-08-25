@@ -68,7 +68,7 @@ class InputData(BaseModel):
     nivel_ensino: str
     formacao: str
     tempo_experiencia_dados: str
-    linguagens_Preferidas: str
+    linguagens_preferidas: str
     bancos_de_dados: str
     cloud_preferida: str
 
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     #     nivel_ensino="Pós-graduação",
     #     formacao="Computação / Engenharia de Software / Sistemas de Informação/ TI",
     #     tempo_experiencia_dados="de 3 a 4 anos",
-    #     linguagens_Preferidas="Python, JavaScript",
+    #     linguagens_preferidas="Python, JavaScript",
     #     bancos_de_dados="PostgreSQL, MongoDB",
     #     cloud_preferida="Amazon Web Services (AWS)"
     #     )
